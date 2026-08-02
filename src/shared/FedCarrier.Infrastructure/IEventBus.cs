@@ -24,4 +24,7 @@ public class EventBusOptions
     public string DlqExchange { get; set; } = "fedcarrier.dlx";
     public string ServiceName { get; set; } = "FedCarrier";
     public bool Enabled { get; set; } = true;
+    public int MaxRetries { get; set; } = 3;
+    public int RetryDelaySeconds { get; set; } = 5;
+    public const string RetryCountHeader = "x-retry-count";
 }

@@ -282,11 +282,11 @@ pattern across all services, and configure Saga patterns for distributed transac
 - [x] Event publishing infrastructure (IEventBus/RabbitMqEventBus) in Shipment, Order, Billing + Saga
 - [x] Outbox processor background service (Shipment, Order, Billing) verified end-to-end
 - [x] Dead-letter queue handling (DLQ exchange, nack routing)
-- [ ] Message retry and retry policies
+- [x] Message retry and retry policies (TTL retry queue + DLQ, verified live)
 - [x] Saga orchestration for order-to-shipment-to-billing workflow (live E2E passed)
 - [x] Compensating actions for failed saga steps (cancel path)
 - [x] Integration tests for event-driven workflows (5 saga tests + live harness)
-- [ ] Message schema registry documentation
+- [x] Message schema registry documentation (docs/message-schema-registry.md)
 
 ### Milestones
 - [x] M18: Order placement triggers full saga (order -> shipment -> billing -> notification) — live E2E passed

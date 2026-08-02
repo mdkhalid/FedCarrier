@@ -110,17 +110,22 @@ public class RabbitMqEventBus : IEventBus, IAsyncDisposable
 
         var routingKey = GetDefaultRoutingKey<T>();
         var queueName = queue ?? _options.ServiceName + "." + routingKey + "." + typeof(T).Name;
+        var retryQueueName = queueName + ".retry";
         var dlqName = queueName + ".dlq";
 
-        await _channel.QueueDeclareAsync(queueName, durable: true, exclusive: false, autoDelete: false, arguments: new Dictionary<string, object?>
-        {
-            ["x-dead-letter-exchange"] = _options.DlqExchange,
-            ["x-dead-letter-routing-key"] = routingKey + ".dlq"
-        }, cancellationToken: cancellationToken);
+        await _channel.QueueDeclareAsync(queueName, durable: true, exclusive: false, autoDelete: false, cancellationToken: cancellationToken);
         await _channel.QueueBindAsync(queueName, _options.Exchange, routingKey, cancellationToken: cancellationToken);
 
+        await _channel.QueueDeclareAsync(retryQueueName, durable: true, exclusive: false, autoDelete: false,
+            arguments: new Dictionary<string, object?>
+            {
+                ["x-message-ttl"] = _options.RetryDelaySeconds * 1000,
+                ["x-dead-letter-exchange"] = _options.Exchange,
+                ["x-dead-letter-routing-key"] = routingKey
+            }, cancellationToken: cancellationToken);
+
         await _channel.QueueDeclareAsync(dlqName, durable: true, exclusive: false, autoDelete: false, cancellationToken: cancellationToken);
-        await _channel.QueueBindAsync(dlqName, _options.DlqExchange, routingKey + ".dlq", cancellationToken: cancellationToken);
+        await _channel.QueueBindAsync(dlqName, _options.DlqExchange, queueName + ".dlq", cancellationToken: cancellationToken);
 
         var eventName = typeof(T).Name;
         lock (_handlers)
@@ -151,8 +156,43 @@ public class RabbitMqEventBus : IEventBus, IAsyncDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error handling event {Type}", typeof(T).Name);
-                await _channel.BasicNackAsync(ea.DeliveryTag, false, requeue: false, cancellationToken);
+                var retries = GetRetryCount(ea.BasicProperties.Headers);
+                _logger.LogError(ex, "Error handling event {Type} (attempt {Retries}/{MaxRetries})", typeof(T).Name, retries + 1, _options.MaxRetries);
+
+                if (retries < _options.MaxRetries)
+                {
+                    var retryProps = new BasicProperties
+                    {
+                        Persistent = true,
+                        ContentType = "application/json",
+                        Headers = new Dictionary<string, object?>
+                        {
+                            [EventBusOptions.RetryCountHeader] = retries + 1,
+                            ["x-correlation-id"] = GetCorrelationId(ea.BasicProperties.Headers)
+                        }
+                    };
+                    await _channel.BasicPublishAsync(string.Empty, retryQueueName, false, retryProps, ea.Body.ToArray(), cancellationToken);
+                    await _channel.BasicAckAsync(ea.DeliveryTag, false, cancellationToken);
+                    _logger.LogWarning("Scheduled retry for {Type} on {RetryQueue} (attempt {Retries}/{MaxRetries})",
+                        typeof(T).Name, retryQueueName, retries + 1, _options.MaxRetries);
+                }
+                else
+                {
+                    var dlqProps = new BasicProperties
+                    {
+                        Persistent = true,
+                        ContentType = "application/json",
+                        Headers = new Dictionary<string, object?>
+                        {
+                            [EventBusOptions.RetryCountHeader] = retries + 1,
+                            ["x-failure-reason"] = ex.Message,
+                            ["x-correlation-id"] = GetCorrelationId(ea.BasicProperties.Headers)
+                        }
+                    };
+                    await _channel.BasicPublishAsync(_options.DlqExchange, queueName + ".dlq", false, dlqProps, ea.Body.ToArray(), cancellationToken);
+                    await _channel.BasicAckAsync(ea.DeliveryTag, false, cancellationToken);
+                    _logger.LogError("Event {Type} moved to DLQ after {MaxRetries} attempts", typeof(T).Name, _options.MaxRetries);
+                }
             }
         };
 
@@ -183,5 +223,19 @@ public class RabbitMqEventBus : IEventBus, IAsyncDisposable
     private static string GetDefaultRoutingKey<T>()
     {
         return typeof(T).Name.ToLowerInvariant().Replace("event", "", StringComparison.Ordinal);
+    }
+
+    private static int GetRetryCount(IDictionary<string, object?>? headers)
+    {
+        if (headers is null || !headers.TryGetValue(EventBusOptions.RetryCountHeader, out var value) || value is null)
+            return 0;
+        return value is byte[] bytes ? Convert.ToInt32(bytes[0]) : Convert.ToInt32(value);
+    }
+
+    private static string GetCorrelationId(IDictionary<string, object?>? headers)
+    {
+        if (headers is not null && headers.TryGetValue("x-correlation-id", out var value) && value is not null)
+            return value.ToString() ?? string.Empty;
+        return string.Empty;
     }
 }
