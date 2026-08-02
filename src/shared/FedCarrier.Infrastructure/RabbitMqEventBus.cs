@@ -156,7 +156,7 @@ public class RabbitMqEventBus : IEventBus, IAsyncDisposable
             }
         };
 
-        var tag = await _channel.BasicConsumeAsync(queueName, autoAck: false, "consumerTag", false, false, null, consumer, cancellationToken);
+        var tag = await _channel.BasicConsumeAsync(queueName, autoAck: false, _options.ServiceName + "-" + Guid.NewGuid().ToString("N"), false, false, null, consumer, cancellationToken);
         _consumerTags.Add(tag);
         _logger.LogInformation("Subscribed to {Queue} for {Type}", queueName, typeof(T).Name);
     }

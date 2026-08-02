@@ -43,11 +43,11 @@ app.Lifetime.ApplicationStarted.Register(async () =>
     try
     {
         await eventBus.SubscribeAsync<OrderPlacedEvent>(orchestrator.HandleOrderPlacedAsync, "FedCarrier.Saga.orders");
-        await eventBus.SubscribeAsync<ShipmentCreatedEvent>(orchestrator.HandleShipmentCreatedAsync, "FedCarrier.Saga.shipments");
-        await eventBus.SubscribeAsync<ShipmentDeliveredEvent>(orchestrator.HandleShipmentDeliveredAsync, "FedCarrier.Saga.shipments");
-        await eventBus.SubscribeAsync<InvoiceGeneratedEvent>(orchestrator.HandleInvoiceGeneratedAsync, "FedCarrier.Saga.billing");
-        await eventBus.SubscribeAsync<PaymentConfirmedEvent>(orchestrator.HandlePaymentConfirmedAsync, "FedCarrier.Saga.billing");
-        await eventBus.SubscribeAsync<OrderStatusChangedEvent>(orchestrator.HandleOrderCancelledAsync, "FedCarrier.Saga.orders");
+        await eventBus.SubscribeAsync<ShipmentCreatedEvent>(orchestrator.HandleShipmentCreatedAsync, "FedCarrier.Saga.shipment-created");
+        await eventBus.SubscribeAsync<ShipmentDeliveredEvent>(orchestrator.HandleShipmentDeliveredAsync, "FedCarrier.Saga.shipment-delivered");
+        await eventBus.SubscribeAsync<InvoiceGeneratedEvent>(orchestrator.HandleInvoiceGeneratedAsync, "FedCarrier.Saga.invoice-generated");
+        await eventBus.SubscribeAsync<PaymentConfirmedEvent>(orchestrator.HandlePaymentConfirmedAsync, "FedCarrier.Saga.payment-confirmed");
+        await eventBus.SubscribeAsync<OrderStatusChangedEvent>(orchestrator.HandleOrderCancelledAsync, "FedCarrier.Saga.order-status");
     }
     catch (Exception ex)
     {
