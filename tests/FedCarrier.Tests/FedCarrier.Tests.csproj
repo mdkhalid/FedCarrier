@@ -21,6 +21,8 @@
     <ProjectReference Include="..\..\src\services\FedCarrier.Fleet\FedCarrier.Fleet.csproj" />
     <ProjectReference Include="..\..\src\services\FedCarrier.Driver\FedCarrier.Driver.csproj" />
     <ProjectReference Include="..\..\src\services\FedCarrier.Warehouse\FedCarrier.Warehouse.csproj" />
+    <ProjectReference Include="..\..\src\services\FedCarrier.Tracking\FedCarrier.Tracking.csproj" />
+    <ProjectReference Include="..\..\src\services\FedCarrier.Routing\FedCarrier.Routing.csproj" />
   </ItemGroup>
 
 </Project>

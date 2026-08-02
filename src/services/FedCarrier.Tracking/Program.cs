@@ -1,4 +1,10 @@
 using Serilog;
+using FedCarrier.Tracking.Infrastructure;
+using FedCarrier.Tracking.Application.Handlers;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
+using FedCarrier.Tracking.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +17,10 @@ builder.Host.UseSerilog((context, config) =>
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+builder.Services.AddDbContext<TrackingDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -23,5 +33,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<TrackingHub>("/hubs/tracking");
 
 app.Run();
+
+
