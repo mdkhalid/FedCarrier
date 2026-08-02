@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\shared\FedCarrier.Contracts\FedCarrier.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\shared\FedCarrier.Infrastructure\FedCarrier.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\services\FedCarrier.Identity\FedCarrier.Identity.csproj" />
     <ProjectReference Include="..\..\src\services\FedCarrier.Customer\FedCarrier.Customer.csproj" />
     <ProjectReference Include="..\..\src\services\FedCarrier.Shipment\FedCarrier.Shipment.csproj" />
@@ -30,6 +31,7 @@
     <ProjectReference Include="..\..\src\services\FedCarrier.Billing\FedCarrier.Billing.csproj" />
     <ProjectReference Include="..\..\src\services\FedCarrier.Notification\FedCarrier.Notification.csproj" />
     <ProjectReference Include="..\..\src\services\FedCarrier.Reporting\FedCarrier.Reporting.csproj" />
+    <ProjectReference Include="..\..\src\services\FedCarrier.Saga\FedCarrier.Saga.csproj" />
   </ItemGroup>
 
 </Project>

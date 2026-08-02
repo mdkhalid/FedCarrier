@@ -1,6 +1,7 @@
 using Serilog;
 using Microsoft.EntityFrameworkCore;
 using FedCarrier.Order.Infrastructure;
+using FedCarrier.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 builder.Services.AddDbContext<OrderDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddEventBus(builder.Configuration);
+builder.Services.AddOutbox(builder.Configuration.GetConnectionString("DefaultConnection"));
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();

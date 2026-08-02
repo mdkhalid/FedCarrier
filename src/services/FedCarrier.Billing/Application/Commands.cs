@@ -13,6 +13,7 @@ public class CreateInvoiceItemDto
 
 public class CreateInvoiceCommand : IRequest<ApiResponse<Guid>>
 {
+    public string CorrelationId { get; set; } = string.Empty;
     public Guid ShipmentId { get; set; }
     public Guid? CustomerId { get; set; }
     public decimal Amount { get; set; }
@@ -23,10 +24,12 @@ public class CreateInvoiceCommand : IRequest<ApiResponse<Guid>>
 
 public class ConfirmPaymentCommand : IRequest<ApiResponse<Unit>>
 {
+    public string CorrelationId { get; set; } = string.Empty;
     public Guid InvoiceId { get; set; }
 }
 
 public class CancelInvoiceCommand : IRequest<ApiResponse<Unit>>
 {
+    public string CorrelationId { get; set; } = string.Empty;
     public Guid InvoiceId { get; set; }
 }

@@ -12,7 +12,12 @@ namespace FedCarrier.Order.Application.Handlers;
 public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, ApiResponse<Guid>>
 {
     private readonly OrderDbContext _db;
-    public CreateOrderCommandHandler(OrderDbContext db) => _db = db;
+    private readonly IOutboxRepository? _outbox;
+    public CreateOrderCommandHandler(OrderDbContext db, IOutboxRepository? outbox = null)
+    {
+        _db = db;
+        _outbox = outbox;
+    }
 
     public async Task<ApiResponse<Guid>> Handle(CreateOrderCommand request, CancellationToken ct)
     {
@@ -42,6 +47,15 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Api
         _db.Orders.Add(order);
         await _db.SaveChangesAsync(ct);
 
+        await OutboxWriter.WriteAsync(_outbox, new OrderPlacedEvent
+        {
+            OrderId = order.Id,
+            CustomerId = order.CustomerId,
+            CustomerName = order.CustomerName,
+            TotalAmount = order.TotalAmount,
+            CorrelationId = request.CorrelationId
+        }, order.Id.ToString(), ct);
+
         return new ApiResponse<Guid> { Success = true, Data = order.Id };
     }
 }
@@ -49,7 +63,12 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Api
 public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatusCommand, ApiResponse<Unit>>
 {
     private readonly OrderDbContext _db;
-    public UpdateOrderStatusCommandHandler(OrderDbContext db) => _db = db;
+    private readonly IOutboxRepository? _outbox;
+    public UpdateOrderStatusCommandHandler(OrderDbContext db, IOutboxRepository? outbox = null)
+    {
+        _db = db;
+        _outbox = outbox;
+    }
 
     public async Task<ApiResponse<Unit>> Handle(UpdateOrderStatusCommand request, CancellationToken ct)
     {
@@ -64,6 +83,14 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
             order.DeliveredDate = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(ct);
+
+        await OutboxWriter.WriteAsync(_outbox, new OrderStatusChangedEvent
+        {
+            OrderId = order.Id,
+            Status = request.Status.ToString(),
+            CorrelationId = request.CorrelationId
+        }, order.Id.ToString(), ct);
+
         return new ApiResponse<Unit> { Success = true, Data = Unit.Value };
     }
 }
@@ -71,7 +98,12 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
 public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, ApiResponse<Unit>>
 {
     private readonly OrderDbContext _db;
-    public CancelOrderCommandHandler(OrderDbContext db) => _db = db;
+    private readonly IOutboxRepository? _outbox;
+    public CancelOrderCommandHandler(OrderDbContext db, IOutboxRepository? outbox = null)
+    {
+        _db = db;
+        _outbox = outbox;
+    }
 
     public async Task<ApiResponse<Unit>> Handle(CancelOrderCommand request, CancellationToken ct)
     {
@@ -81,6 +113,14 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, Api
 
         order.Status = OrderStatus.Cancelled;
         await _db.SaveChangesAsync(ct);
+
+        await OutboxWriter.WriteAsync(_outbox, new OrderStatusChangedEvent
+        {
+            OrderId = order.Id,
+            Status = OrderStatus.Cancelled.ToString(),
+            CorrelationId = request.CorrelationId
+        }, order.Id.ToString(), ct);
+
         return new ApiResponse<Unit> { Success = true, Data = Unit.Value };
     }
 }

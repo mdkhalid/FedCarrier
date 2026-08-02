@@ -6,6 +6,7 @@ namespace FedCarrier.Order.Application.Commands;
 
 public class CreateOrderCommand : IRequest<ApiResponse<Guid>>
 {
+    public string CorrelationId { get; set; } = string.Empty;
     public Guid CustomerId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
     public List<CreateOrderItemDto> Items { get; set; } = new();
@@ -20,11 +21,13 @@ public class CreateOrderItemDto
 
 public class UpdateOrderStatusCommand : IRequest<ApiResponse<Unit>>
 {
+    public string CorrelationId { get; set; } = string.Empty;
     public Guid Id { get; set; }
     public OrderStatus Status { get; set; }
 }
 
 public class CancelOrderCommand : IRequest<ApiResponse<Unit>>
 {
+    public string CorrelationId { get; set; } = string.Empty;
     public Guid Id { get; set; }
 }

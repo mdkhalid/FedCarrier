@@ -6,6 +6,7 @@
     <Project Path="src/services/FedCarrier.Fleet/FedCarrier.Fleet.csproj" />
     <Project Path="src/services/FedCarrier.Identity/FedCarrier.Identity.csproj" />
     <Project Path="src/services/FedCarrier.Notification/FedCarrier.Notification.csproj" />
+    <Project Path="src/services/FedCarrier.Saga/FedCarrier.Saga.csproj" />
   </Folder>
   <Folder Name="/src/shared/">
     <Project Path="src/shared/FedCarrier.Common/FedCarrier.Common.csproj" />

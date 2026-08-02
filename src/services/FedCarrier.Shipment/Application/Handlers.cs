@@ -12,7 +12,12 @@ namespace FedCarrier.Shipment.Application.Handlers;
 public class CreateShipmentCommandHandler : IRequestHandler<CreateShipmentCommand, ApiResponse<Guid>>
 {
     private readonly ShipmentDbContext _db;
-    public CreateShipmentCommandHandler(ShipmentDbContext db) => _db = db;
+    private readonly IOutboxRepository? _outbox;
+    public CreateShipmentCommandHandler(ShipmentDbContext db, IOutboxRepository? outbox = null)
+    {
+        _db = db;
+        _outbox = outbox;
+    }
 
     public async Task<ApiResponse<Guid>> Handle(CreateShipmentCommand request, CancellationToken ct)
     {
@@ -52,6 +57,15 @@ public class CreateShipmentCommandHandler : IRequestHandler<CreateShipmentComman
         _db.Shipments.Add(shipment);
         await _db.SaveChangesAsync(ct);
 
+        await OutboxWriter.WriteAsync(_outbox, new ShipmentCreatedEvent
+        {
+            ShipmentId = shipment.Id,
+            OrderId = shipment.OrderId,
+            Origin = shipment.Origin,
+            Destination = shipment.Destination,
+            CorrelationId = request.CorrelationId
+        }, shipment.Id.ToString(), ct);
+
         return new ApiResponse<Guid> { Success = true, Data = shipment.Id };
     }
 }
@@ -59,7 +73,12 @@ public class CreateShipmentCommandHandler : IRequestHandler<CreateShipmentComman
 public class AssignDriverCommandHandler : IRequestHandler<AssignDriverCommand, ApiResponse<Unit>>
 {
     private readonly ShipmentDbContext _db;
-    public AssignDriverCommandHandler(ShipmentDbContext db) => _db = db;
+    private readonly IOutboxRepository? _outbox;
+    public AssignDriverCommandHandler(ShipmentDbContext db, IOutboxRepository? outbox = null)
+    {
+        _db = db;
+        _outbox = outbox;
+    }
 
     public async Task<ApiResponse<Unit>> Handle(AssignDriverCommand request, CancellationToken ct)
     {
@@ -83,6 +102,15 @@ public class AssignDriverCommandHandler : IRequestHandler<AssignDriverCommand, A
         });
 
         await _db.SaveChangesAsync(ct);
+
+        await OutboxWriter.WriteAsync(_outbox, new ShipmentAssignedEvent
+        {
+            ShipmentId = shipment.Id,
+            DriverId = request.DriverId,
+            VehicleId = request.VehicleId,
+            CorrelationId = request.CorrelationId
+        }, shipment.Id.ToString(), ct);
+
         return new ApiResponse<Unit> { Success = true, Data = Unit.Value };
     }
 }
@@ -90,7 +118,12 @@ public class AssignDriverCommandHandler : IRequestHandler<AssignDriverCommand, A
 public class UpdateShipmentStatusCommandHandler : IRequestHandler<UpdateShipmentStatusCommand, ApiResponse<Unit>>
 {
     private readonly ShipmentDbContext _db;
-    public UpdateShipmentStatusCommandHandler(ShipmentDbContext db) => _db = db;
+    private readonly IOutboxRepository? _outbox;
+    public UpdateShipmentStatusCommandHandler(ShipmentDbContext db, IOutboxRepository? outbox = null)
+    {
+        _db = db;
+        _outbox = outbox;
+    }
 
     public async Task<ApiResponse<Unit>> Handle(UpdateShipmentStatusCommand request, CancellationToken ct)
     {
@@ -112,6 +145,25 @@ public class UpdateShipmentStatusCommandHandler : IRequestHandler<UpdateShipment
         });
 
         await _db.SaveChangesAsync(ct);
+
+        await OutboxWriter.WriteAsync(_outbox, new ShipmentStatusChangedEvent
+        {
+            ShipmentId = shipment.Id,
+            OrderId = shipment.OrderId,
+            Status = request.Status.ToString(),
+            CorrelationId = request.CorrelationId
+        }, shipment.Id.ToString(), ct);
+
+        if (request.Status == ShipmentStatus.Delivered)
+        {
+            await OutboxWriter.WriteAsync(_outbox, new ShipmentDeliveredEvent
+            {
+                ShipmentId = shipment.Id,
+                OrderId = shipment.OrderId,
+                CorrelationId = request.CorrelationId
+            }, shipment.Id.ToString(), ct);
+        }
+
         return new ApiResponse<Unit> { Success = true, Data = Unit.Value };
     }
 }

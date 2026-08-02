@@ -1,3 +1,4 @@
+using FedCarrier.Common;
 using FedCarrier.Contracts;
 using FedCarrier.Order.Application.Commands;
 using FedCarrier.Order.Application.Queries;
@@ -16,10 +17,18 @@ public class OrdersController : ControllerBase
 
     public OrdersController(ISender mediator) => _mediator = mediator;
 
+    private string CorrelationId =>
+        Request.Headers.TryGetValue(Constants.CorrelationIdHeader, out var value)
+            ? value.ToString()
+            : Guid.NewGuid().ToString();
+
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<Guid>), StatusCodes.Status201Created)]
     public async Task<ActionResult<ApiResponse<Guid>>> Create(CreateOrderCommand command)
-        => Ok(await _mediator.Send(command));
+    {
+        command.CorrelationId = CorrelationId;
+        return Ok(await _mediator.Send(command));
+    }
 
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(ApiResponse<OrderDto>), StatusCodes.Status200OK)]
@@ -38,6 +47,7 @@ public class OrdersController : ControllerBase
     public async Task<ActionResult<ApiResponse<Unit>>> UpdateStatus(Guid id, UpdateOrderStatusCommand command)
     {
         command.Id = id;
+        command.CorrelationId = CorrelationId;
         return Ok(await _mediator.Send(command));
     }
 
@@ -45,5 +55,5 @@ public class OrdersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<Unit>>> Cancel(Guid id)
-        => Ok(await _mediator.Send(new CancelOrderCommand { Id = id }));
+        => Ok(await _mediator.Send(new CancelOrderCommand { Id = id, CorrelationId = CorrelationId }));
 }

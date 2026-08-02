@@ -3,6 +3,7 @@ using FedCarrier.Billing.Application.Commands;
 using FedCarrier.Billing.Application.Queries;
 using FedCarrier.Billing.Domain;
 using FedCarrier.Billing.Infrastructure;
+using FedCarrier.Infrastructure;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,7 +12,12 @@ namespace FedCarrier.Billing.Application.Handlers;
 public class CreateInvoiceCommandHandler : IRequestHandler<CreateInvoiceCommand, ApiResponse<Guid>>
 {
     private readonly BillingDbContext _db;
-    public CreateInvoiceCommandHandler(BillingDbContext db) => _db = db;
+    private readonly IOutboxRepository? _outbox;
+    public CreateInvoiceCommandHandler(BillingDbContext db, IOutboxRepository? outbox = null)
+    {
+        _db = db;
+        _outbox = outbox;
+    }
 
     public async Task<ApiResponse<Guid>> Handle(CreateInvoiceCommand request, CancellationToken ct)
     {
@@ -47,6 +53,16 @@ public class CreateInvoiceCommandHandler : IRequestHandler<CreateInvoiceCommand,
         _db.Invoices.Add(invoice);
         await _db.SaveChangesAsync(ct);
 
+        await OutboxWriter.WriteAsync(_outbox, new InvoiceGeneratedEvent
+        {
+            InvoiceId = invoice.Id,
+            ShipmentId = invoice.ShipmentId,
+            CustomerId = invoice.CustomerId,
+            InvoiceNumber = invoice.InvoiceNumber,
+            TotalAmount = invoice.TotalAmount,
+            CorrelationId = request.CorrelationId
+        }, invoice.Id.ToString(), ct);
+
         return new ApiResponse<Guid> { Success = true, Data = invoice.Id };
     }
 
@@ -59,7 +75,12 @@ public class CreateInvoiceCommandHandler : IRequestHandler<CreateInvoiceCommand,
 public class ConfirmPaymentCommandHandler : IRequestHandler<ConfirmPaymentCommand, ApiResponse<Unit>>
 {
     private readonly BillingDbContext _db;
-    public ConfirmPaymentCommandHandler(BillingDbContext db) => _db = db;
+    private readonly IOutboxRepository? _outbox;
+    public ConfirmPaymentCommandHandler(BillingDbContext db, IOutboxRepository? outbox = null)
+    {
+        _db = db;
+        _outbox = outbox;
+    }
 
     public async Task<ApiResponse<Unit>> Handle(ConfirmPaymentCommand request, CancellationToken ct)
     {
@@ -70,6 +91,16 @@ public class ConfirmPaymentCommandHandler : IRequestHandler<ConfirmPaymentComman
         invoice.Status = InvoiceStatus.Paid;
         invoice.PaidAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
+
+        await OutboxWriter.WriteAsync(_outbox, new PaymentConfirmedEvent
+        {
+            InvoiceId = invoice.Id,
+            ShipmentId = invoice.ShipmentId,
+            CustomerId = invoice.CustomerId,
+            TotalAmount = invoice.TotalAmount,
+            CorrelationId = request.CorrelationId
+        }, invoice.Id.ToString(), ct);
+
         return new ApiResponse<Unit> { Success = true, Data = Unit.Value };
     }
 }
