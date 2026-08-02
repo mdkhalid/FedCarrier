@@ -27,6 +27,9 @@
     <ProjectReference Include="..\..\src\services\FedCarrier.Warehouse\FedCarrier.Warehouse.csproj" />
     <ProjectReference Include="..\..\src\services\FedCarrier.Tracking\FedCarrier.Tracking.csproj" />
     <ProjectReference Include="..\..\src\services\FedCarrier.Routing\FedCarrier.Routing.csproj" />
+    <ProjectReference Include="..\..\src\services\FedCarrier.Billing\FedCarrier.Billing.csproj" />
+    <ProjectReference Include="..\..\src\services\FedCarrier.Notification\FedCarrier.Notification.csproj" />
+    <ProjectReference Include="..\..\src\services\FedCarrier.Reporting\FedCarrier.Reporting.csproj" />
   </ItemGroup>
 
 </Project>
