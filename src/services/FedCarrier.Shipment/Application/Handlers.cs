@@ -72,7 +72,7 @@ public class AssignDriverCommandHandler : IRequestHandler<AssignDriverCommand, A
         shipment.Status = ShipmentStatus.Assigned;
         shipment.UpdatedAt = DateTime.UtcNow;
 
-        shipment.StatusHistory.Add(new StatusHistory
+        _db.StatusHistory.Add(new StatusHistory
         {
             Id = Guid.NewGuid(),
             ShipmentId = shipment.Id,
@@ -101,7 +101,7 @@ public class UpdateShipmentStatusCommandHandler : IRequestHandler<UpdateShipment
         shipment.Status = request.Status;
         shipment.UpdatedAt = DateTime.UtcNow;
 
-        shipment.StatusHistory.Add(new StatusHistory
+        _db.StatusHistory.Add(new StatusHistory
         {
             Id = Guid.NewGuid(),
             ShipmentId = shipment.Id,

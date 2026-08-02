@@ -20,6 +20,12 @@ public class ShipmentDbContext : DbContext
             entity.HasIndex(e => e.Status);
             entity.Property(e => e.Origin).HasMaxLength(200);
             entity.Property(e => e.Destination).HasMaxLength(200);
+            entity.HasMany(s => s.Items)
+                .WithOne()
+                .HasForeignKey(i => i.ShipmentId);
+            entity.HasMany(s => s.StatusHistory)
+                .WithOne()
+                .HasForeignKey(h => h.ShipmentId);
         });
 
         modelBuilder.Entity<ShipmentItem>(entity =>

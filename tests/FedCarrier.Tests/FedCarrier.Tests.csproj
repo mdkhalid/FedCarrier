@@ -16,8 +16,12 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.0" />
   </ItemGroup>
 
-<ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\src\shared\FedCarrier.Contracts\FedCarrier.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\services\FedCarrier.Identity\FedCarrier.Identity.csproj" />
+    <ProjectReference Include="..\..\src\services\FedCarrier.Customer\FedCarrier.Customer.csproj" />
+    <ProjectReference Include="..\..\src\services\FedCarrier.Shipment\FedCarrier.Shipment.csproj" />
+    <ProjectReference Include="..\..\src\services\FedCarrier.Order\FedCarrier.Order.csproj" />
     <ProjectReference Include="..\..\src\services\FedCarrier.Fleet\FedCarrier.Fleet.csproj" />
     <ProjectReference Include="..\..\src\services\FedCarrier.Driver\FedCarrier.Driver.csproj" />
     <ProjectReference Include="..\..\src\services\FedCarrier.Warehouse\FedCarrier.Warehouse.csproj" />
