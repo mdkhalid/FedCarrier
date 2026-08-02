@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Correlation Trace by CorrelationId",
+    "query": "@Level IN ['Information', 'Warning', 'Error'] AND @Properties.CorrelationId != '' | select @Timestamp, @Level, @MessageTemplate, @Properties.CorrelationId, @Properties.ServiceName, @Properties.EventType | orderby @Timestamp desc",
+    "description": "Trace all logs for a specific correlation ID across services"
+  },
+  {
+    "name": "Saga Flow Tracking",
+    "query": "@Level IN ['Information', 'Warning', 'Error'] AND (@Properties.CorrelationId != '' OR @Properties.EventType IN ['OrderPlacedEvent', 'ShipmentCreatedEvent', 'ShipmentDeliveredEvent', 'InvoiceGeneratedEvent', 'PaymentConfirmedEvent', 'OrderStatusChangedEvent']) | select @Timestamp, @Level, @MessageTemplate, @Properties.CorrelationId, @Properties.EventType, @Properties.ServiceName | orderby @Timestamp asc",
+    "description": "End-to-end saga orchestration trace"
+  },
+  {
+    "name": "Messaging Errors & Retries",
+    "query": "@Level IN ['Warning', 'Error'] AND (@MessageTemplate LIKE '%retry%' OR @MessageTemplate LIKE '%DLQ%' OR @MessageTemplate LIKE '%failed%') | select @Timestamp, @Level, @MessageTemplate, @Properties.CorrelationId, @Properties.EventType, @Properties.RetryCount | orderby @Timestamp desc",
+    "description": "All messaging failures, retries, and dead-letter events"
+  },
+  {
+    "name": "Outbox Processing",
+    "query": "@Level IN ['Information', 'Warning', 'Error'] AND @MessageTemplate LIKE '%outbox%' | select @Timestamp, @Level, @MessageTemplate, @Properties.CorrelationId, @Properties.EventType | orderby @Timestamp desc",
+    "description": "Outbox message persistence and publishing activity"
+  },
+  {
+    "name": "Service Health Check Failures",
+    "query": "@Level IN ['Warning', 'Error'] AND @MessageTemplate LIKE '%health%' | select @Timestamp, @Level, @MessageTemplate, @Properties.ServiceName | orderby @Timestamp desc",
+    "description": "Health check failures across all services"
+  },
+  {
+    "name": "Slow HTTP Requests (>1s)",
+    "query": "@Level IN ['Information', 'Warning'] AND @Properties.RequestPath != '' AND @Properties.ElapsedMilliseconds > 1000 | select @Timestamp, @Level, @MessageTemplate, @Properties.RequestMethod, @Properties.RequestPath, @Properties.ElapsedMilliseconds, @Properties.CorrelationId | orderby @Properties.ElapsedMilliseconds desc",
+    "description": "Slow HTTP requests with correlation IDs"
+  }
+]

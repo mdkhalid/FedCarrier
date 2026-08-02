@@ -19,7 +19,7 @@ builder.Services.AddDbContext<OrderDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddEventBus(builder.Configuration);
 builder.Services.AddOutbox(builder.Configuration.GetConnectionString("DefaultConnection"));
-builder.Services.AddHealthChecks();
+builder.Services.AddObservability(builder.Configuration);
 
 var app = builder.Build();
 
@@ -32,6 +32,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
-app.MapHealthChecks("/health");
+app.UseObservability();
 
 app.Run();

@@ -117,6 +117,7 @@ public class OutboxPublisher
 
                 await _eventBus.PublishAsync(@event, message.EventType.ToLowerInvariant().Replace("event", "", StringComparison.Ordinal), cancellationToken);
                 await _repository.MarkAsProcessedAsync(message.Id, cancellationToken);
+                FedCarrierMetrics.OutboxProcessed.Add(1, new KeyValuePair<string, object?>("event_type", message.EventType));
             }
             catch (Exception ex)
             {

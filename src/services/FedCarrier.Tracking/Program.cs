@@ -1,6 +1,7 @@
 using Serilog;
 using FedCarrier.Tracking.Infrastructure;
 using FedCarrier.Tracking.Application.Handlers;
+using FedCarrier.Infrastructure;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
@@ -21,6 +22,7 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Progr
 builder.Services.AddDbContext<TrackingDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddSignalR();
+builder.Services.AddObservability(builder.Configuration);
 
 var app = builder.Build();
 
@@ -34,6 +36,7 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHub<TrackingHub>("/hubs/tracking");
+app.UseObservability();
 
 app.Run();
 

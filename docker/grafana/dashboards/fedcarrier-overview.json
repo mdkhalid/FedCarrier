@@ -1,0 +1,446 @@
+{
+  "dashboard": {
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "editable": true,
+    "gnetId": null,
+    "graphTooltip": 0,
+    "id": null,
+    "links": [],
+    "panels": [
+      {
+        "datasource": "Prometheus",
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "red", "value": 1}
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "gridPos": {"h": 4, "w": 12, "x": 0, "y": 0},
+        "id": 1,
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto"
+        },
+        "pluginVersion": "8.0.0",
+        "targets": [
+          {
+            "expr": "count(up{job=\"fedcarrier\"} == 1)",
+            "legendFormat": "Healthy Services",
+            "refId": "A"
+          },
+          {
+            "expr": "count(up{job=\"fedcarrier\"} == 0)",
+            "legendFormat": "Down Services",
+            "refId": "B"
+          }
+        ],
+        "title": "Service Health Overview",
+        "type": "stat"
+      },
+      {
+        "datasource": "Prometheus",
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 0.5},
+                {"color": "red", "value": 1}
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "gridPos": {"h": 4, "w": 12, "x": 12, "y": 0},
+        "id": 2,
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto"
+        },
+        "pluginVersion": "8.0.0",
+        "targets": [
+          {
+            "expr": "sum(rate(http_server_request_duration_seconds_count{job=\"fedcarrier\"}[5m])) by (instance)",
+            "legendFormat": "{{instance}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Requests/sec per Service",
+        "type": "bargauge"
+      },
+      {
+        "datasource": "Prometheus",
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "custom": {"lineWidth": 1},
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null}
+              ]
+            },
+            "unit": "s"
+          },
+          "overrides": []
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+        "id": 3,
+        "options": {
+          "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom"},
+          "tooltip": {"mode": "single"}
+        },
+        "pluginVersion": "8.0.0",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(http_server_request_duration_seconds_bucket{job=\"fedcarrier\"}[5m])) by (le, instance, http_route))",
+            "legendFormat": "p50 - {{instance}} {{http_route}}",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{job=\"fedcarrier\"}[5m])) by (le, instance, http_route))",
+            "legendFormat": "p95 - {{instance}} {{http_route}}",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(http_server_request_duration_seconds_bucket{job=\"fedcarrier\"}[5m])) by (le, instance, http_route))",
+            "legendFormat": "p99 - {{instance}} {{http_route}}",
+            "refId": "C"
+          }
+        ],
+        "title": "HTTP Latency (p50, p95, p99)",
+        "type": "timeseries"
+      },
+      {
+        "datasource": "Prometheus",
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 0.01},
+                {"color": "red", "value": 0.05}
+              ]
+            },
+            "unit": "percentunit"
+          },
+          "overrides": []
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+        "id": 4,
+        "options": {
+          "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom"},
+          "tooltip": {"mode": "single"}
+        },
+        "pluginVersion": "8.0.0",
+        "targets": [
+          {
+            "expr": "sum(rate(http_server_request_duration_seconds_count{job=\"fedcarrier\",http_response_status_code=~\"5..\"}[5m])) by (instance) / sum(rate(http_server_request_duration_seconds_count{job=\"fedcarrier\"}[5m])) by (instance)",
+            "legendFormat": "{{instance}} error rate",
+            "refId": "A"
+          }
+        ],
+        "title": "Error Rate (5xx) per Service",
+        "type": "timeseries"
+      },
+      {
+        "datasource": "Prometheus",
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "custom": {"lineWidth": 1},
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null}
+              ]
+            },
+            "unit": "ops"
+          },
+          "overrides": []
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+        "id": 5,
+        "options": {
+          "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom"},
+          "tooltip": {"mode": "single"}
+        },
+        "pluginVersion": "8.0.0",
+        "targets": [
+          {
+            "expr": "sum(rate(fedcarrier_messaging_published_total{job=\"fedcarrier\"}[5m])) by (instance, event_type)",
+            "legendFormat": "{{instance}} - {{event_type}}",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(fedcarrier_messaging_received_total{job=\"fedcarrier\"}[5m])) by (instance, event_type)",
+            "legendFormat": "{{instance}} - {{event_type}} (received)",
+            "refId": "B"
+          }
+        ],
+        "title": "Messaging Throughput (Published vs Received)",
+        "type": "timeseries"
+      },
+      {
+        "datasource": "Prometheus",
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 1},
+                {"color": "red", "value": 10}
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+        "id": 6,
+        "options": {
+          "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom"},
+          "tooltip": {"mode": "single"}
+        },
+        "pluginVersion": "8.0.0",
+        "targets": [
+          {
+            "expr": "sum(rate(fedcarrier_messaging_failed_total{job=\"fedcarrier\"}[5m])) by (instance, event_type)",
+            "legendFormat": "{{instance}} - {{event_type}} failed",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(fedcarrier_messaging_retried_total{job=\"fedcarrier\"}[5m])) by (instance, event_type)",
+            "legendFormat": "{{instance}} - {{event_type}} retried",
+            "refId": "B"
+          },
+          {
+            "expr": "sum(rate(fedcarrier_messaging_deadlettered_total{job=\"fedcarrier\"}[5m])) by (instance, event_type)",
+            "legendFormat": "{{instance}} - {{event_type}} DLQ",
+            "refId": "C"
+          }
+        ],
+        "title": "Messaging Failures / Retries / DLQ",
+        "type": "timeseries"
+      },
+      {
+        "datasource": "Prometheus",
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "custom": {"lineWidth": 1},
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null}
+              ]
+            },
+            "unit": "ops"
+          },
+          "overrides": []
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+        "id": 7,
+        "options": {
+          "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom"},
+          "tooltip": {"mode": "single"}
+        },
+        "pluginVersion": "8.0.0",
+        "targets": [
+          {
+            "expr": "sum(rate(fedcarrier_outbox_processed_total{job=\"fedcarrier\"}[5m])) by (instance)",
+            "legendFormat": "{{instance}} processed",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(fedcarrier_outbox_published_total{job=\"fedcarrier\"}[5m])) by (instance)",
+            "legendFormat": "{{instance}} published",
+            "refId": "B"
+          }
+        ],
+        "title": "Outbox Throughput",
+        "type": "timeseries"
+      },
+      {
+        "datasource": "Prometheus",
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 100000000},
+                {"color": "red", "value": 500000000}
+              ]
+            },
+            "unit": "bytes"
+          },
+          "overrides": []
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+        "id": 8,
+        "options": {
+          "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom"},
+          "tooltip": {"mode": "single"}
+        },
+        "pluginVersion": "8.0.0",
+        "targets": [
+          {
+            "expr": "process_resident_memory_bytes{job=\"fedcarrier\"}",
+            "legendFormat": "{{instance}} RSS",
+            "refId": "A"
+          },
+          {
+            "expr": "process_virtual_memory_bytes{job=\"fedcarrier\"}",
+            "legendFormat": "{{instance}} VSZ",
+            "refId": "B"
+          }
+        ],
+        "title": "Memory Usage per Service",
+        "type": "timeseries"
+      },
+      {
+        "datasource": "Prometheus",
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "custom": {"lineWidth": 1},
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null}
+              ]
+            },
+            "unit": "percent"
+          },
+          "overrides": []
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 28},
+        "id": 9,
+        "options": {
+          "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom"},
+          "tooltip": {"mode": "single"}
+        },
+        "pluginVersion": "8.0.0",
+        "targets": [
+          {
+            "expr": "rate(process_cpu_seconds_total{job=\"fedcarrier\"}[5m]) * 100",
+            "legendFormat": "{{instance}} CPU %",
+            "refId": "A"
+          }
+        ],
+        "title": "CPU Usage per Service",
+        "type": "timeseries"
+      },
+      {
+        "datasource": "Prometheus",
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "mappings": [
+              {"type": "value", "options": {"0": {"color": "red", "text": "DOWN"}, "1": {"color": "green", "text": "UP"}}}
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "green", "value": 1}
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 28},
+        "id": 10,
+        "options": {
+          "colorMode": "row",
+          "graphMode": "none",
+          "justifyMode": "auto"
+        },
+        "pluginVersion": "8.0.0",
+        "targets": [
+          {
+            "expr": "up{job=\"fedcarrier\"}",
+            "legendFormat": "{{instance}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Service Up/Down Status",
+        "type": "table"
+      }
+    ],
+    "refresh": "10s",
+    "schemaVersion": 38,
+    "style": "dark",
+    "tags": ["fedcarrier", "microservices"],
+    "templating": {
+      "list": [
+        {
+          "current": {"selected": false, "text": "All", "value": "$__all"},
+          "datasource": "Prometheus",
+          "definition": "label_values(up{job=\"fedcarrier\"}, instance)",
+          "hide": 0,
+          "includeAll": true,
+          "label": "Instance",
+          "multi": true,
+          "name": "instance",
+          "options": [],
+          "query": {"query": "label_values(up{job=\"fedcarrier\"}, instance)", "refId": "StandardVariableQuery"},
+          "refresh": 1,
+          "regex": "",
+          "skipUrlSync": false,
+          "sort": 0,
+          "type": "query"
+        }
+      ]
+    },
+    "time": {"from": "now-1h", "to": "now"},
+    "timepicker": {},
+    "timezone": "",
+    "title": "FedCarrier Microservices Overview",
+    "uid": "fedcarrier-overview",
+    "version": 1,
+    "weekStart": ""
+  },
+  "overwrite": true
+}

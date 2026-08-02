@@ -1,0 +1,155 @@
+groups:
+  - name: fedcarrier-service-health
+    interval: 30s
+    rules:
+      - alert: ServiceDown
+        expr: up{job="fedcarrier"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.instance }} is down"
+          description: "{{ $labels.instance }} has been down for more than 1 minute."
+
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_server_request_duration_seconds_count{job="fedcarrier",http_response_status_code=~"5.."}[5m])) by (instance)
+          /
+          sum(rate(http_server_request_duration_seconds_count{job="fedcarrier"}[5m])) by (instance)
+          > 0.05
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} 5xx error rate is above 5% for 2 minutes."
+
+      - alert: HighLatencyP99
+        expr: |
+          histogram_quantile(0.99, sum(rate(http_server_request_duration_seconds_bucket{job="fedcarrier"}[5m])) by (le, instance, http_route))
+          > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High p99 latency on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} {{ $labels.http_route }} p99 latency exceeds 2 seconds."
+
+      - alert: HighMemoryUsage
+        expr: |
+          (process_resident_memory_bytes{job="fedcarrier"} / 1024 / 1024) > 1000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} RSS memory exceeds 1GB."
+
+      - alert: HighCPUUsage
+        expr: |
+          rate(process_cpu_seconds_total{job="fedcarrier"}[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} CPU usage exceeds 80%."
+
+  - name: fedcarrier-messaging
+    interval: 30s
+    rules:
+      - alert: MessagingHighFailureRate
+        expr: |
+          sum(rate(fedcarrier_messaging_failed_total{job="fedcarrier"}[5m])) by (instance)
+          /
+          sum(rate(fedcarrier_messaging_received_total{job="fedcarrier"}[5m])) by (instance)
+          > 0.1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High messaging failure rate on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} messaging failure rate exceeds 10%."
+
+      - alert: MessagingDLQGrowing
+        expr: |
+          increase(fedcarrier_messaging_deadlettered_total{job="fedcarrier"}[10m]) > 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "DLQ growing on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} dead-letter queue received more than 10 messages in 10 minutes."
+
+      - alert: MessagingHighRetryRate
+        expr: |
+          sum(rate(fedcarrier_messaging_retried_total{job="fedcarrier"}[5m])) by (instance)
+          /
+          sum(rate(fedcarrier_messaging_received_total{job="fedcarrier"}[5m])) by (instance)
+          > 0.2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High messaging retry rate on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} messaging retry rate exceeds 20%."
+
+      - alert: OutboxStalled
+        expr: |
+          rate(fedcarrier_outbox_processed_total{job="fedcarrier"}[5m]) == 0
+          and
+          sum(rate(fedcarrier_outbox_published_total{job="fedcarrier"}[5m])) by (instance) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Outbox processor stalled on {{ $labels.instance }}"
+          description: "{{ $labels.instance }} outbox has pending messages but processing rate is zero."
+
+  - name: fedcarrier-infrastructure
+    interval: 30s
+    rules:
+      - alert: RabbitMQDown
+        expr: up{job="rabbitmq"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "RabbitMQ is down"
+          description: "RabbitMQ broker is unreachable."
+
+      - alert: SQLServerDown
+        expr: up{job="sqlserver"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SQL Server is down"
+          description: "SQL Server is unreachable."
+
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis is unreachable."
+
+      - alert: SeqDown
+        expr: up{job="seq"} == 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Seq is down"
+          description: "Seq log ingestion is unreachable."
+
+      - alert: PrometheusDown
+        expr: up{job="prometheus"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Prometheus is down"
+          description: "Prometheus metrics collection is down."

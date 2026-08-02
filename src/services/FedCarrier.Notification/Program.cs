@@ -22,7 +22,7 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Progr
 builder.Services.AddDbContext<NotificationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddEventBus(builder.Configuration);
-builder.Services.AddHealthChecks();
+builder.Services.AddObservability(builder.Configuration);
 
 var app = builder.Build();
 
@@ -35,6 +35,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+app.UseObservability();
 
 var eventBus = app.Services.GetRequiredService<IEventBus>();
 var serviceProvider = app.Services;

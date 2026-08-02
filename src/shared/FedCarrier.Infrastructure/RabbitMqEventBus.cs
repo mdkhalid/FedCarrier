@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using FedCarrier.Contracts;
@@ -85,7 +86,15 @@ public class RabbitMqEventBus : IEventBus, IAsyncDisposable
 
         @event.EventType = typeof(T).Name;
         var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(@event, @event.GetType()));
-        var properties = new BasicProperties { Persistent = true, ContentType = "application/json" };
+        var properties = new BasicProperties
+        {
+            Persistent = true,
+            ContentType = "application/json",
+            Headers = new Dictionary<string, object?>
+            {
+                ["x-correlation-id"] = @event.CorrelationId
+            }
+        };
 
         await _channel.BasicPublishAsync(
             _options.Exchange,
@@ -95,6 +104,7 @@ public class RabbitMqEventBus : IEventBus, IAsyncDisposable
             body,
             cancellationToken);
 
+        FedCarrierMetrics.MessagesPublished.Add(1, new KeyValuePair<string, object?>("event_type", typeof(T).Name));
         _logger.LogInformation("Published {Type} to {RoutingKey}", typeof(T).Name, routingKey);
     }
 
@@ -139,11 +149,19 @@ public class RabbitMqEventBus : IEventBus, IAsyncDisposable
         consumer.ReceivedAsync += async (_, ea) =>
         {
             var message = Encoding.UTF8.GetString(ea.Body.ToArray());
+            var correlationId = GetCorrelationId(ea.BasicProperties.Headers);
+            using var activity = FedCarrierMetrics.ActivitySource.StartActivity("receive " + typeof(T).Name);
+            activity?.SetTag("messaging.system", "rabbitmq");
+            activity?.SetTag("messaging.operation", "receive");
+            activity?.SetTag("event.type", typeof(T).Name);
+            activity?.SetTag("correlation.id", correlationId);
             try
             {
                 var @event = JsonSerializer.Deserialize<T>(message);
                 if (@event is not null)
                 {
+                    if (@event.CorrelationId is null or "")
+                        @event.CorrelationId = correlationId;
                     List<Func<object, CancellationToken, Task>> handlers;
                     lock (_handlers)
                     {
@@ -152,12 +170,15 @@ public class RabbitMqEventBus : IEventBus, IAsyncDisposable
                     foreach (var h in handlers)
                         await h(@event, CancellationToken.None);
                 }
+                FedCarrierMetrics.MessagesReceived.Add(1, new KeyValuePair<string, object?>("event_type", typeof(T).Name));
                 await _channel.BasicAckAsync(ea.DeliveryTag, false, cancellationToken);
             }
             catch (Exception ex)
             {
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
                 var retries = GetRetryCount(ea.BasicProperties.Headers);
                 _logger.LogError(ex, "Error handling event {Type} (attempt {Retries}/{MaxRetries})", typeof(T).Name, retries + 1, _options.MaxRetries);
+                FedCarrierMetrics.MessagesFailed.Add(1, new KeyValuePair<string, object?>("event_type", typeof(T).Name));
 
                 if (retries < _options.MaxRetries)
                 {
@@ -168,11 +189,12 @@ public class RabbitMqEventBus : IEventBus, IAsyncDisposable
                         Headers = new Dictionary<string, object?>
                         {
                             [EventBusOptions.RetryCountHeader] = retries + 1,
-                            ["x-correlation-id"] = GetCorrelationId(ea.BasicProperties.Headers)
+                            ["x-correlation-id"] = correlationId
                         }
                     };
                     await _channel.BasicPublishAsync(string.Empty, retryQueueName, false, retryProps, ea.Body.ToArray(), cancellationToken);
                     await _channel.BasicAckAsync(ea.DeliveryTag, false, cancellationToken);
+                    FedCarrierMetrics.MessagesRetried.Add(1, new KeyValuePair<string, object?>("event_type", typeof(T).Name));
                     _logger.LogWarning("Scheduled retry for {Type} on {RetryQueue} (attempt {Retries}/{MaxRetries})",
                         typeof(T).Name, retryQueueName, retries + 1, _options.MaxRetries);
                 }
@@ -186,11 +208,12 @@ public class RabbitMqEventBus : IEventBus, IAsyncDisposable
                         {
                             [EventBusOptions.RetryCountHeader] = retries + 1,
                             ["x-failure-reason"] = ex.Message,
-                            ["x-correlation-id"] = GetCorrelationId(ea.BasicProperties.Headers)
+                            ["x-correlation-id"] = correlationId
                         }
                     };
                     await _channel.BasicPublishAsync(_options.DlqExchange, queueName + ".dlq", false, dlqProps, ea.Body.ToArray(), cancellationToken);
                     await _channel.BasicAckAsync(ea.DeliveryTag, false, cancellationToken);
+                    FedCarrierMetrics.MessagesDeadLettered.Add(1, new KeyValuePair<string, object?>("event_type", typeof(T).Name));
                     _logger.LogError("Event {Type} moved to DLQ after {MaxRetries} attempts", typeof(T).Name, _options.MaxRetries);
                 }
             }

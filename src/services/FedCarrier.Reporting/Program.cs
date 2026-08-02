@@ -1,5 +1,6 @@
 using Serilog;
 using FedCarrier.Reporting.Infrastructure;
+using FedCarrier.Infrastructure;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +18,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 builder.Services.AddDbContext<ReportingDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddObservability(builder.Configuration);
 
 var app = builder.Build();
 
@@ -29,5 +31,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+app.UseObservability();
 
 app.Run();

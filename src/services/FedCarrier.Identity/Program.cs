@@ -1,5 +1,6 @@
 using Serilog;
 using FedCarrier.Identity.Infrastructure;
+using FedCarrier.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -34,7 +35,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddDbContext<IdentityDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddHealthChecks();
+builder.Services.AddObservability(builder.Configuration);
 
 var app = builder.Build();
 
@@ -48,6 +49,6 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.MapHealthChecks("/health");
+app.UseObservability();
 
 app.Run();

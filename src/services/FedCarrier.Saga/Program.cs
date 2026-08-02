@@ -20,7 +20,7 @@ builder.Services.AddDbContext<SagaDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<SagaOrchestrator>();
 builder.Services.AddEventBus(builder.Configuration);
-builder.Services.AddHealthChecks();
+builder.Services.AddObservability(builder.Configuration);
 
 var app = builder.Build();
 
@@ -33,7 +33,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
-app.MapHealthChecks("/health");
+app.UseObservability();
 
 var orchestrator = app.Services.GetRequiredService<SagaOrchestrator>();
 var eventBus = app.Services.GetRequiredService<IEventBus>();
