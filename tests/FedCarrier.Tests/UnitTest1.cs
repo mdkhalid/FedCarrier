@@ -1,4 +1,5 @@
 using FedCarrier.Contracts;
+using Xunit;
 
 namespace FedCarrier.Tests;
 
