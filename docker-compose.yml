@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      SA_PASSWORD: 'FedCarrier@Dev123!'
+      ACCEPT_EULA: 'Y'
+    ports:
+      - '1433:1433'
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: ['CMD', 'sqlcmd', '-S', 'localhost', '-U', 'sa', '-P', 'FedCarrier@Dev123!', '-Q', 'SELECT 1']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    environment:
+      RABBITMQ_DEFAULT_USER: fedcarrier
+      RABBITMQ_DEFAULT_PASS: fedcarrier@dev123!
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - redis_data:/data
+
+  seq:
+    image: datalust/seq:latest
+    environment:
+      ACCEPT_EULA: 'Y'
+    ports:
+      - '5341:80'
+    volumes:
+      - seq_data:/data
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - sqlserver
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - '3000:3000'
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: 'admin'
+    depends_on:
+      - prometheus
+
+volumes:
+  sqlserver_data:
+  rabbitmq_data:
+  redis_data:
+  seq_data:

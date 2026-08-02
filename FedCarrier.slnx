@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/services/">
+    <Project Path="src/services/FedCarrier.Customer/FedCarrier.Customer.csproj" />
+    <Project Path="src/services/FedCarrier.Driver/FedCarrier.Driver.csproj" />
+    <Project Path="src/services/FedCarrier.Fleet/FedCarrier.Fleet.csproj" />
+    <Project Path="src/services/FedCarrier.Identity/FedCarrier.Identity.csproj" />
+    <Project Path="src/services/FedCarrier.Notification/FedCarrier.Notification.csproj" />
+  </Folder>
+  <Folder Name="/src/shared/">
+    <Project Path="src/shared/FedCarrier.Common/FedCarrier.Common.csproj" />
+    <Project Path="src/shared/FedCarrier.Contracts/FedCarrier.Contracts.csproj" />
+    <Project Path="src/shared/FedCarrier.Infrastructure/FedCarrier.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FedCarrier.Tests/FedCarrier.Tests.csproj" />
+  </Folder>
+</Solution>

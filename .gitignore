@@ -1,0 +1,40 @@
+# Build
+bin/
+obj/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# NuGet
+*.nupkg
+packages/
+
+# Test
+TestResults/
+coverage/
+
+# Docker
+.docker/
+
+# Env
+.env
+.env.local
+
+# Logs
+*.log
+
+# Node (for Angular clients)
+node_modules/
+dist/
+
+# Secrets
+secrets.json
+appsettings.Secrets.json
